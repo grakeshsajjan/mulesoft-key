@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="localhost" port="8083" doc:name="HTTP Listener Configuration"/>
+    <flow name="basic_tutorialFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="*" doc:name="HTTP"/>
+        <logger message="current path is #[message.inboundProperties.'http.request.path']" level="INFO" doc:name="Logger"/>
+        <set-payload value="#['Hello, ' + message.inboundProperties.'http.request.path' + '. Today is ' + server.dateTime.format('dd/MM/yy') + '.' ]" doc:name="Set Payload"/>
+        <file:outbound-endpoint path="C:\Rakesh_Softwares\Mule_Files" outputPattern="#[message.id].txt" responseTimeout="10000" doc:name="File"/>
+    </flow>
+    <flow name="basic_tutorialFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/vm" doc:name="HTTP"/>
+        <set-session-variable variableName="input" value="#[message.inboundProperties.'http.query.params'.input]" doc:name="Session Variable"/>
+        <set-payload value="the input is: #[sessionVars.input]" doc:name="Set Payload"/>
+        <vm:outbound-endpoint exchange-pattern="request-response" path="vmpath" doc:name="VM"/>
+        <set-variable variableName="output" value="#[payload]" doc:name="Variable"/>
+        <logger message="#[flowVars.output] is the output variable set...." level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="basic_tutorialFlow2">
+        <vm:inbound-endpoint exchange-pattern="request-response" path="vmpath" doc:name="VM"/>
+        <set-payload value="#[payload]---is same as in the second flow input variable is #[sessionVars.input]" doc:name="Set Payload"/>
+    </flow>
+    <flow name="basic_tutorialFlow3">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/jsonflow" doc:name="HTTP"/>
+        <set-variable variableName="input" value="#[message.inboundProperties.'http.query.params'.data]" doc:name="Variable"/>
+        <logger message="#[flowVars.input] is the variable set" level="INFO" doc:name="Logger"/>
+        <set-payload value="#[flowVars.input]" doc:name="Set Payload"/>
+        <json:json-to-object-transformer doc:name="JSON to Object" />
+        <component class="org.basic.JsonTest" doc:name="Java"/>
+        <logger message="the payload object returned is #[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
